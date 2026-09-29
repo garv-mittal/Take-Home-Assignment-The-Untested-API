@@ -8,8 +8,9 @@ const findById = (id) => tasks.find((t) => t.id === id);
 
 const getByStatus = (status) => tasks.filter((t) => t.status.includes(status));
 
+//fixing the pagination error which was causing the very first entried=limit getting skip.
 const getPaginated = (page, limit) => {
-  const offset = page * limit;
+  const offset = (page-1) * limit;
   return tasks.slice(offset, offset + limit);
 };
 
