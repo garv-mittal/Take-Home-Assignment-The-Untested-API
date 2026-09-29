@@ -69,4 +69,28 @@ router.patch('/:id/complete', (req, res) => {
   res.json(task);
 });
 
+router.patch('/:id/assign', (req, res) => {
+  const { assignee } = req.body;
+
+  if (!assignee || typeof assignee !== 'string' || !assignee.trim()) {
+    return res.status(400).json({ error: 'assignee is required' });
+  }
+
+  const task = taskService.findById(req.params.id);
+
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  if (task.assignee) {
+    return res.status(409).json({ error: 'Task is already assigned' });
+  }
+
+  const updated = taskService.update(req.params.id, {
+    assignee: assignee.trim(),
+  });
+
+  res.json(updated);
+});
+
 module.exports = router;

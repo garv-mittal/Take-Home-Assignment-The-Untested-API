@@ -273,4 +273,83 @@ describe('Task API integration tests', () => {
         .expect(404);
     });
   });
+
+    describe('PATCH /tasks/:id/assign', () => {
+    test('assigns an unassigned task', async () => {
+      const created = await request(app)
+        .post('/tasks')
+        .send({ title: 'Assign me' })
+        .expect(201);
+
+      const response = await request(app)
+        .patch(`/tasks/${created.body.id}/assign`)
+        .send({ assignee: 'Garv' })
+        .expect(200);
+
+      expect(response.body.assignee).toBe('Garv');
+    });
+
+    test('trims surrounding whitespace from the assignee name', async () => {
+      const created = await request(app)
+        .post('/tasks')
+        .send({ title: 'Assign me' })
+        .expect(201);
+
+      const response = await request(app)
+        .patch(`/tasks/${created.body.id}/assign`)
+        .send({ assignee: '  Garv  ' })
+        .expect(200);
+
+      expect(response.body.assignee).toBe('Garv');
+    });
+
+    test('returns 400 for a missing or empty assignee', async () => {
+      const created = await request(app)
+        .post('/tasks')
+        .send({ title: 'Assign me' })
+        .expect(201);
+
+      await request(app)
+        .patch(`/tasks/${created.body.id}/assign`)
+        .send({})
+        .expect(400);
+
+      await request(app)
+        .patch(`/tasks/${created.body.id}/assign`)
+        .send({ assignee: '   ' })
+        .expect(400);
+
+      await request(app)
+        .patch(`/tasks/${created.body.id}/assign`)
+        .send({ assignee: 123 })
+        .expect(400);
+    });
+
+    test('returns 404 when assigning a missing task', async () => {
+      await request(app)
+        .patch('/tasks/missing-id/assign')
+        .send({ assignee: 'Garv' })
+        .expect(404);
+    });
+
+    test('returns 409 when a task is already assigned', async () => {
+      const created = await request(app)
+        .post('/tasks')
+        .send({ title: 'Assign twice' })
+        .expect(201);
+
+      await request(app)
+        .patch(`/tasks/${created.body.id}/assign`)
+        .send({ assignee: 'First' })
+        .expect(200);
+
+      const response = await request(app)
+        .patch(`/tasks/${created.body.id}/assign`)
+        .send({ assignee: 'Second' })
+        .expect(409);
+
+      expect(response.body.error)
+        .toBe('Task is already assigned');
+    });
+  });
 });
